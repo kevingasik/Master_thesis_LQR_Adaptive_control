@@ -1,0 +1,677 @@
+
+% This LaTeX was auto-generated from MATLAB code.
+% To make changes, update the MATLAB code and republish this document.
+
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{color}
+
+\sloppy
+\definecolor{lightgray}{gray}{0.5}
+\setlength{\parindent}{0pt}
+
+\begin{document}
+
+    
+    
+\subsection*{Contents}
+
+\begin{itemize}
+\setlength{\itemsep}{-1ex}
+   \item Linear And Nonlinear Tractor Trailer Controller (Main Script)
+   \item Define  truck constants
+   \item Define Model Constants
+   \item Model table
+   \item Run simulink model with full state feedback or FUll state integral action control
+   \item Full state feedback Control with error states
+   \item Full state feedback with Integral Action
+   \item Full State\_Feedback and adaptive control
+   \item results models
+\end{itemize}
+
+
+\subsection*{Linear And Nonlinear Tractor Trailer Controller (Main Script)}
+
+\begin{par}
+Simulates a tractor-trailer model
+\end{par} \vspace{1em}
+\begin{par}
+\textbf{Author:} Kevin Gasik
+\end{par} \vspace{1em}
+\begin{par}
+\textbf{Date:}   3/04/2019
+\end{par} \vspace{1em}
+\begin{par}
+\textbf{Required Files:}
+\end{par} \vspace{1em}
+\begin{par}
+\textbf{See Also:} *\begin{verbatim}truck_constants.m\end{verbatim} *\ensuremath{<}trailer\_constants.m\ensuremath{>} *\ensuremath{<}model\_constants.m\ensuremath{>} *\ensuremath{<}linear\_model.m\ensuremath{>} *\ensuremath{<}Nonlinear\_model.m\ensuremath{>} *\ensuremath{<}GlobtoLoc.m\ensuremath{>} *\ensuremath{<}FSF\_plots.m\ensuremath{>} *\ensuremath{<}FSF\_integral.m\ensuremath{>} *\ensuremath{<}articulation1.m\ensuremath{>} *\ensuremath{<}articulation.m\ensuremath{>} *\ensuremath{<}Dynamic\_articulation\_FSF.slx\ensuremath{>} *\ensuremath{<}Dynamic\_articulation\_FSFA.slx\ensuremath{>} *\ensuremath{<}Dynamic\_articulation\_FSFI.slx\ensuremath{>} *\ensuremath{<}NonLinear\_TruckTrailer.slx\ensuremath{>} *\ensuremath{<}Linear\_model\_FSFA.slx\ensuremath{>}
+\end{par} \vspace{1em}
+\begin{par}
+\textbf{Code Repository:} Visit for source files
+\end{par} \vspace{1em}
+\begin{par}
+\textbf{Detailed Description:} This function is the main script. All files mentioned in the required files must be located in the same file path. There multiple options to run. You can run 6 different modes, the nonlinear mode 3 and the state-FSFA mode currently do not work and may be improved in the future.
+\end{par} \vspace{1em}
+\begin{par}
+\textbf{Copyright (C) 2019 Kevin Gasik} This file is not to be used or distributed by anyone without explicit consent from the author.This file serves as an example of how to approach and simulate these problems and should not be used to implement any controllers on any vehicle. By using the program shown below you agree that if anyone is harmed Kevin Gasik and California Polytechnic University is not liable.
+\end{par} \vspace{1em}
+\begin{verbatim}
+clc;
+close all;
+clear;
+clear vars;
+
+
+g = 9.81; % gravity (m/s^2)
+\end{verbatim}
+
+
+\subsection*{Define  truck constants}
+
+\begin{verbatim}
+m1 = 7449; % truck mass (kg)
+[g,m1,a1,l1,b1,h1,k1,I1,Fz1,Fz2] = truck_constants(g,m1);
+%%Define trailer constants
+m2 = 32551; % trailer mass (kg)
+[g,m2,a2,l2,b2,e1,k2,I2,Fz3] = trailer_constants(g,m2);
+\end{verbatim}
+
+
+\subsection*{Define Model Constants}
+
+\begin{verbatim}
+[Fn,C1,C2,C,C3,Cs1,Cq1] = model_constants(Fz1,Fz3,a1,b1);
+Vx = 20;
+t_final = 100;
+\end{verbatim}
+
+
+\subsection*{Model table}
+
+\begin{par}
+model        \ensuremath{|}  Value
+\end{par} \vspace{1em}
+\begin{verbatim}
+%--------------|---------
+%  FSF         |    0
+% FSFIA        |    1
+% FSFA         |    2
+% NonLin       |    3
+% State-FSFA   |    4
+% Result       |    5
+%-------------------
+model = 0;
+\end{verbatim}
+
+
+\subsection*{Run simulink model with full state feedback or FUll state integral action control}
+
+\begin{verbatim}
+if(model == 0)
+\end{verbatim}
+
+
+\subsection*{Full state feedback Control with error states}
+
+\begin{verbatim}
+[A,B1,B2,D] = articulation1(m1,m2,a2,I1,I2,C,C3,Cs1,h1,l2,Vx,Cq1,C1,a1,l1) ;
+    constants = [C1 C2 C3 m1 m2 I1 I2 a1 l1 h1 b1 a2 l2 Vx];
+
+    Q = [10 0 0 0 0 0 0 0;
+         0 1 0 0 0 0 0 0;
+         0 0 1 0 0 0 0 0;
+         0 0 0 1 0 0 0 0;
+         0 0 0 0 10 0 0 0;
+         0 0 0 0 0 1 0 0;
+         0 0 0 0 0 0 12000 0;
+         0 0 0 0 0 0 0 1];
+
+    R = 2;
+    [K,S,e] = lqr(A,B1,Q,R);
+
+    %Poles =[-1 -20 -100 -30 -5 (-5-5j) (-5+5j) -8];
+    %K = place(A,B1,Poles);
+    sim('Dynamic_articulation_FSF')
+    FSF_plots(tout,e1,e2,e3,e4,car,hitch,trailer,delta_ang,delta_angle_non,XY_coor)
+
+    parameters = [e1, e2, e3, e4, car, hitch, trailer,yaw, XY_coor(:,1),XY_coor(:,2)];
+    csvwrite('truck_model_parameters',parameters)
+\end{verbatim}
+\begin{verbatim}
+elseif(model == 1)
+\end{verbatim}
+
+
+\subsection*{Full state feedback with Integral Action}
+
+\begin{verbatim}
+[A,B1,B2,D] = articulation1(m1,m2,a2,I1,I2,C,C3,Cs1,h1,l2,Vx,Cq1,C1,a1,l1) ;
+    constants = [C1 C2 C3 m1 m2 I1 I2 a1 l1 h1 b1 a2 l2 Vx];
+
+    [A,B1,B2,D] = FSF_integral(A,B1,B2,D);
+    Q = [10 0 0 0 0 0 0 0 0;
+         0 10 0 0 0 0 0 0 0;
+         0 0 10 0 0 0 0 0 0;
+         0 0 0 10 0 0 0 0 0;
+         0 0 0 0 100 0 0 0 0;
+         0 0 0 0 0 10 0 0 0;
+         0 0 0 0 0 0 12000 0 0;
+         0 0 0 0 0 0 0 10 0
+         0 0 0 0 0 0 0 0 1];
+    R = 1;
+    [K,S,e] = lqr(A,B1,Q,R);
+
+    sim('Dynamic_articulation_FSFI')
+    delta_angle_non = 0;
+    FSF_plots(tout,e1,e2,e3,e4,car,hitch,trailer,delta_ang,delta_angle_non,XY_coor)
+\end{verbatim}
+\begin{verbatim}
+elseif(model == 2)
+\end{verbatim}
+
+
+\subsection*{Full State\_Feedback and adaptive control}
+
+\begin{verbatim}
+[A,B1,B2,D] = articulation1(m1,m2,a2,I1,I2,C,C3,Cs1,h1,l2,Vx,Cq1,C1,a1,l1) ;
+
+    Q1 = [10 0 0 0 0 0 0 0;
+         0 1 0 0 0 0 0 0;
+         0 0 1 0 0 0 0 0;
+         0 0 0 1 0 0 0 0;
+         0 0 0 0 10 0 0 0;
+         0 0 0 0 0 1 0 0;
+         0 0 0 0 0 0 12000 0;
+         0 0 0 0 0 0 0 1];
+
+    %Q = eye(8);
+    R = 2;
+    [K,S,e] = lqr(A,B1,Q1,R);
+    constants = [C1 C2 C3 m1 m2 I1 I2 a1 l1 h1 b1 a2 l2 Vx];
+
+    Ap = A
+    Bp = B2
+
+    Q = [10 7 6 5 4 3 2 1;
+         7 12 7 6 5 4 3 2;
+         6 7 15 7 6 5 4 3;
+         5 6 7 20 7 6 5 4;
+         4 5 6 7 10 7 6 5;
+         3 4 5 6 7 45 7 6;
+         2 3 4 5 6 7 12 7;
+         1 2 3 4 5 6 7 80];
+
+ Am = [-0.5 0 0 0 0 0 0 0; %e1
+       1 -5 0 0 0 0 0 0;  %e1dot
+       -1 0 -1.5 0 0 0 0 0;%e2
+       0 0 1 -6 0 0 0 0;  %e2dot
+       1 0 0 0 -1 0 0 0;%e3
+       0 0 0 0 1 -8 0 0;  %e3dot
+       -1 0 0 0 0 0 -1.5 0;%e4
+       0 0 0 0 0 0 1 -10]; %e4dot
+
+    Bm = [1;0;0;0;0;0;0;0];
+
+    Pm = lyap(Am,Q)
+
+    N = 1.5394
+
+
+    sim('Dynamic_articulation_FSFA')
+    FSF_plots(tout,e1,e2,e3,e4,car,hitch,trailer,delta_ang,delta_angle_non,XY_coor)
+
+    hf3 = figure(7);
+    hf3.set('Name','Desired Path Global Coordinates',...
+        'renderer','painters','position',[360 198 700 420]);
+    plot(car(:,1),car(:,2))
+    hold on
+    %plot(trailer(:,1),trailer(:,2))
+    %plot(XY_coor(:,1),XY_coor(:,2))
+    plot(car_after(:,1),car_after(:,2))
+    title({'Global Coordinates'},...
+       'interpreter','latex','fontsize',14);
+    xlabel('Position[$m$]',...
+       'interpreter','latex','fontsize',12);
+    ylabel('Position [$m$]',...
+       'interpreter','latex','fontsize',12);
+    legend({'$car$','$trailer$','$Path$'},...
+       'interpreter','latex','fontsize',12,'location','bestoutside');
+
+    hf6 = figure(6);
+    hf6.set('Name','car_after',...
+        'renderer','painters','position',[360 198 700 420]);
+    plot(car_after(:,1),car_after(:,2))
+    title({'Steering Input'},...
+       'interpreter','latex','fontsize',14);
+    xlabel('Time [$s$]',...
+       'interpreter','latex','fontsize',12);
+    ylabel('Angle [$deg$]',...
+       'interpreter','latex','fontsize',12);
+    legend({'$steering angle$','$trailer$','$Path$'},...
+       'interpreter','latex','fontsize',12,'location','bestoutside');
+\end{verbatim}
+\begin{verbatim}
+elseif(model == 3)
+%%Non-Linear Model
+[A,B1,B2,D] = articulation1(m1,m2,a2,I1,I2,C,C3,Cs1,h1,l2,Vx,Cq1,C1,a1,l1) ;
+
+    Q = [10 0 0 0 0 0 0 0;
+         0 1 0 0 0 0 0 0;
+         0 0 1 0 0 0 0 0;
+         0 0 0 1 0 0 0 0;
+         0 0 0 0 10 0 0 0;
+         0 0 0 0 0 1 0 0;
+         0 0 0 0 0 0 500 0;
+         0 0 0 0 0 0 0 1];
+
+    %Q = eye(8);
+
+    R = 2;
+    [K,S,e] = lqr(A,B1,Q,R);
+    %K = [K(1) K(2) K(3) K(4)]
+
+    constants = [C1 C2 C3 m1 m2 I1 I2 a1 l1 h1 b1 a2 l2 Vx];
+    sim('NonLinear_TruckTrailer.slx')
+
+    figure(1)
+    plot(car(:,1),car(:,2))
+    hold on
+    %plot(tout,car(:,2))
+    plot(XY_coor(:,1),XY_coor(:,2))
+    hold off
+    title('Lateral Position Error vs Time')
+    xlabel('x(m)')
+    ylabel('Y(m)')
+    legend('Actual Position','Instaneous change in position')
+    hold off
+
+elseif(model == 4)
+    %%Linear Truck-Trailer Adaptive Control Full state feedback no error
+    %%states
+    [A,B1,B2,D] = articulation1(m1,m2,a2,I1,I2,C,C3,Cs1,h1,l2,Vx,Cq1,C1,a1,l1) ;
+
+    Q1 = [10 0 0 0 0 0 0 0;
+         0 1 0 0 0 0 0 0;
+         0 0 1 0 0 0 0 0;
+         0 0 0 1 0 0 0 0;
+         0 0 0 0 10 0 0 0;
+         0 0 0 0 0 1 0 0;
+         0 0 0 0 0 0 12000 0;
+         0 0 0 0 0 0 0 1];
+
+    R = 2;
+    [K,S,e] = lqr(A,B1,Q1,R);
+    constants = [C1 C2 C3 m1 m2 I1 I2 a1 l1 h1 b1 a2 l2 Vx];
+
+    Ap = A
+    Bp = B2
+
+    Q = [10 7 6 5 4 3 2 1;
+         7 12 7 6 5 4 3 2;
+         6 7 15 7 6 5 4 3;
+         5 6 7 20 7 6 5 4;
+         4 5 6 7 10 7 6 5;
+         3 4 5 6 7 45 7 6;
+         2 3 4 5 6 7 12 7;
+         1 2 3 4 5 6 7 80];
+
+    Am = [-0.5 0 0 0 0 0 0 0; %e1
+            1 -5 0 0 0 0 0 0;  %e1dot
+            -1 0 -1.5 0 0 0 0 0;%e2
+            0 0 1 -6 0 0 0 0;  %e2dot
+            1 0 0 0 -1 0 0 0;%e3
+            0 0 0 0 1 -8 0 0;  %e3dot
+            -1 0 0 0 0 0 -1.5 0;%e4
+            0 0 0 0 0 0 1 -10]; %e4dot
+
+    Bm = [1;0;0;0;0;0;0;0];
+    Pm = lyap(Am,Q)
+    N = 1.5394
+    %[Ap,Bp,Cp,D] = articulation(m1,m2,a2,I1,I2,C,C3,Cs1,h1,l2,Vx,Cq1,C1,a1,l1);
+    %N = 8.0180
+    N = 79.8589
+    N2 = 2
+    %constants = [C1 C2 C3 m1 m2 I1 I2 a1 l1 h1 b1 a2 l2 Vx];
+    Pm = lyap(Am,Q);
+    delta_angle_non = 0;
+    sim('linear_model_FSFA')
+    %FSF_plots(tout,e1,e2,e3,e4,car,hitch,trailer,delta_ang,delta_angle_non,XY_coor)
+
+elseif(model == 5)
+\end{verbatim}
+
+
+\subsection*{results models}
+
+\begin{verbatim}
+[A,B1,B2,D] = articulation1(m1,m2,a2,I1,I2,C,C3,Cs1,h1,l2,Vx,Cq1,C1,a1,l1) ;
+    Q1 = [10 0 0 0 0 0 0 0;
+         0 1 0 0 0 0 0 0;
+         0 0 1 0 0 0 0 0;
+         0 0 0 1 0 0 0 0;
+         0 0 0 0 10 0 0 0;
+         0 0 0 0 0 1 0 0;
+         0 0 0 0 0 0 12000 0;
+         0 0 0 0 0 0 0 1];
+
+    R = 2;
+
+    Q = [10 7 6 5 4 3 2 1;
+         7 12 7 6 5 4 3 2;
+         6 7 15 7 6 5 4 3;
+         5 6 7 20 7 6 5 4;
+         4 5 6 7 10 7 6 5;
+         3 4 5 6 7 45 7 6;
+         2 3 4 5 6 7 12 7;
+         1 2 3 4 5 6 7 80];
+
+ Am = [-0.5 0 0 0 0 0 0 0; %e1
+       1 -5 0 0 0 0 0 0;  %e1dot
+       -1 0 -1.5 0 0 0 0 0;%e2
+       0 0 1 -6 0 0 0 0;  %e2dot
+       1 0 0 0 -1 0 0 0;%e3
+       0 0 0 0 1 -8 0 0;  %e3dot
+       -1 0 0 0 0 0 -1.5 0;%e4
+       0 0 0 0 0 0 1 -10]; %e4dot
+
+    Bm = [1;0;0;0;0;0;0;0];
+    Pm = lyap(Am,Q)
+    N = 1.5394
+    ta = [];
+    xa = [];
+    tfinal = 100;
+    tf = [];
+    xf = [];
+    xsa = [];
+    xsf = [];
+    [A,B1,B2,D] = articulation1(m1,m2,a2,I1,I2,C,C3,Cs1,h1,l2,Vx,Cq1,C1,a1,l1) ;
+    [K,S,e] = lqr(A,B1,Q1,R);
+    constants = [C1 C2 C3 m1 m2 I1 I2 a1 l1 h1 b1 a2 l2 Vx];
+    Ap = A;
+    Bp = B2;
+
+for n=1.0:1.0:4.0
+    if(n == 1)
+        sim('Dynamic_articulation_FSFA')
+        ta_1 = tout;
+        xa_1 = [e1 e2 e3 e4];
+        parameters = [e1, e2, e3, e4, car, hitch, trailer,yaw, XY_coor(:,1),XY_coor(:,2),delta_angle_non];
+        csvwrite('truck_model_adaptive',parameters)
+        xsa_1 = slip_angle;
+        sim('Dynamic_articulation_FSF')
+        tf_1 = tout;
+        xf_1 = [e1 e2 e3 e4];
+        xsf_1 = slip_angle;
+        parameters = [e1, e2, e3, e4, car, hitch, trailer,yaw, XY_coor(:,1),XY_coor(:,2),delta_angle_non];
+        csvwrite('truck_model_LQR',parameters)
+
+    end
+
+
+    if(n == 2)
+        m2 = m2+15000;
+        [g,m1,a1,l1,b1,h1,k1,I1,Fz1,Fz2] = truck_constants(g,m1);
+        [g,m2,a2,l2,b2,e1,k2,I2,Fz3] = trailer_constants(g,m2);
+        [Fn,C1,C2,C,C3,Cs1,Cq1] = model_constants(Fz1,Fz3,a1,b1);
+        constants = [C1 C2 C3 m1 m2 I1 I2 a1 l1 h1 b1 a2 l2 Vx];
+        [A,B1,B2,D] = articulation1(m1,m2,a2,I1,I2,C,C3,Cs1,h1,l2,Vx,Cq1,C1,a1,l1) ;
+        Ap = A;
+        Bp = B2;
+        sim('Dynamic_articulation_FSFA')
+        ta_2 = tout;
+        xa_2 = [e1 e2 e3 e4];
+        xsa_2 = slip_angle;
+        sim('Dynamic_articulation_FSF')
+        tf_2 = tout;
+        xf_2 = [e1 e2 e3 e4];
+        xsf_2 = slip_angle;
+    end
+
+
+    if(n == 3)
+        m2 = m2+15000;
+        [g,m1,a1,l1,b1,h1,k1,I1,Fz1,Fz2] = truck_constants(g,m1);
+        [g,m2,a2,l2,b2,e1,k2,I2,Fz3] = trailer_constants(g,m2);
+        [Fn,C1,C2,C,C3,Cs1,Cq1] = model_constants(Fz1,Fz3,a1,b1);
+        constants = [C1 C2 C3 m1 m2 I1 I2 a1 l1 h1 b1 a2 l2 Vx];
+        [A,B1,B2,D] = articulation1(m1,m2,a2,I1,I2,C,C3,Cs1,h1,l2,Vx,Cq1,C1,a1,l1) ;
+        Ap = A;
+        Bp = B2;
+        sim('Dynamic_articulation_FSFA')
+        ta_3 = tout;
+        xa_3 = [e1 e2 e3 e4];
+        xsa_3 = slip_angle;
+        parameters = [e1, e2, e3, e4, car, hitch, trailer,yaw, XY_coor(:,1),XY_coor(:,2),delta_angle_non];
+        csvwrite('truck_model_adaptive_30',parameters)
+        sim('Dynamic_articulation_FSF')
+        tf_3 = tout;
+        xf_3 = [e1 e2 e3 e4];
+        xsf_3 = slip_angle;
+        parameters = [e1, e2, e3, e4, car, hitch, trailer,yaw, XY_coor(:,1),XY_coor(:,2),delta_angle_non];
+        csvwrite('truck_model_LQR_30',parameters)
+    end
+
+
+     if(n == 4)
+        m2 = m2+15000;
+        [g,m1,a1,l1,b1,h1,k1,I1,Fz1,Fz2] = truck_constants(g,m1);
+        [g,m2,a2,l2,b2,e1,k2,I2,Fz3] = trailer_constants(g,m2);
+        [Fn,C1,C2,C,C3,Cs1,Cq1] = model_constants(Fz1,Fz3,a1,b1);
+        constants = [C1 C2 C3 m1 m2 I1 I2 a1 l1 h1 b1 a2 l2 Vx];
+        [A,B1,B2,D] = articulation1(m1,m2,a2,I1,I2,C,C3,Cs1,h1,l2,Vx,Cq1,C1,a1,l1) ;
+        Ap = A;
+        Bp = B2;
+        sim('Dynamic_articulation_FSFA')
+        ta_4 = tout;
+        xa_4 = [e1 e2 e3 e4];
+        xsa_4 = slip_angle;
+        sim('Dynamic_articulation_FSF')
+        tf_4 = tout;
+        xf_4 = [e1 e2 e3 e4];
+        xsf_4 = slip_angle;
+    end
+
+    %sim('Dynamic_articulation_FSFA')
+    %ta = [ta; NaN; tout];
+    %xa = [xa; [NaN NaN NaN NaN]; [e1 e2 e3 e4]];
+    %sim('Dynamic_articulation_FSF')
+    %tf = [tf; NaN; tout];
+    %xf = [xf; [NaN NaN NaN NaN]; [e1 e2 e3 e4]];
+
+end
+\end{verbatim}
+\begin{verbatim}
+    close all;
+
+
+    hf1 = figure(1)
+    hf1.set('Name','Lateral Error $e_1$ Road',...
+        'renderer','painters','position',[360 198 700 420]);
+    plot(ta_1,xa_1(:,1),tf_1,xf_1(:,1),tf_2,xf_2(:,1),tf_3,xf_3(:,1),tf_4,xf_4(:,1))
+    title({'Tractor Lateral Position Error, $e_1$'},...
+            'interpreter','latex','fontsize',16);
+    xlabel('Time [$s$]',...
+       'interpreter','latex','fontsize',14);
+    ylabel('Position Error[$m$]',...
+       'interpreter','latex','fontsize',14);
+    legend({'$adaptive$','$m_2$ = 36000','$m_2$ = 50000','$m_2$ = 65000','$m_2$ = 80000'},...
+       'interpreter','latex','fontsize',14,'location','bestoutside');
+
+    hf2 = figure(2)
+    hf2.set('Name','Yaw Angle Error $e_2$',...
+        'renderer','painters','position',[360 198 700 420]);
+    plot(ta_1,xa_1(:,2),tf_1,xf_1(:,2),tf_2,xf_2(:,2),tf_3,xf_3(:,2),tf_4,xf_4(:,2))
+    title({'Tractor Yaw Angle Error, $e_2$ '},...
+            'interpreter','latex','fontsize',16);
+    xlabel('Time [$s$]',...
+       'interpreter','latex','fontsize',14);
+    ylabel('Angle Error[$rad$]',...
+       'interpreter','latex','fontsize',14);
+    legend({'$Adaptive$','$m_2$ = 36000','$m_2$ = 50000','$m_2$ = 65000','$m_2$ = 80000'},...
+       'interpreter','latex','fontsize',14,'location','bestoutside');
+
+    hf3 = figure(3)
+    hf3.set('Name','Lateral Trailer Error, $e_3$',...
+        'renderer','painters','position',[360 198 700 420]);
+    plot(ta_1,xa_1(:,3),tf_1,xf_1(:,3),tf_2,xf_2(:,3),tf_3,xf_3(:,3),tf_4,xf_4(:,3))
+    title({'Trailer Lateral Position Error, $e_3$'},...
+            'interpreter','latex','fontsize',16);
+    xlabel('Time [$s$]',...
+       'interpreter','latex','fontsize',14);
+    ylabel('Position error [$m$]',...
+       'interpreter','latex','fontsize',14);
+    legend({'$adaptive$','$m_2$ = 36000','$m_2$ = 50000','$m_2$ = 65000','$m_2$ = 80000'},...
+       'interpreter','latex','fontsize',14,'location','bestoutside');
+
+    hf4 = figure(4)
+    hf4.set('Name','$e_4$',...
+        'renderer','painters','position',[360 198 700 420]);
+    plot(ta_1,xa_1(:,4),tf_1,xf_1(:,4),tf_2,xf_2(:,4),tf_3,xf_3(:,4),tf_4,xf_4(:,4))
+    title({'Trailer Yaw Angle Error, $e_4$'},...
+            'interpreter','latex','fontsize',16);
+    xlabel('Time [$s$]',...
+       'interpreter','latex','fontsize',14);
+    ylabel('Angle Error [$rad$]',...
+       'interpreter','latex','fontsize',14);
+    legend({'$adaptive$','$m_2$ = 36000','$m_2$ = 50000','$m_2$ = 65000','$m_2$ = 80000'},...
+       'interpreter','latex','fontsize',14,'location','bestoutside');
+
+    hf5 = figure(5)
+    hf5.set('Name','$e_1$',...
+        'renderer','painters','position',[360 198 700 420]);
+    subplot(2,1,1)
+    plot(ta_1,xa_1(:,1),ta_2,xa_2(:,1),ta_3,xa_3(:,1),ta_4,xa_4(:,1))
+    title({'Tractor Lateral Error (Adaptive), $e_1$'},...
+            'interpreter','latex','fontsize',16);
+    xlabel('Time [$s$]',...
+       'interpreter','latex','fontsize',14);
+    ylabel('Position Error [$m$]',...
+       'interpreter','latex','fontsize',14);
+    legend({'$m_2$ = 36000','$m_2$ = 50000','$m_2$ = 65000','$m_2$ = 80000'},...
+       'interpreter','latex','fontsize',14,'location','bestoutside');
+
+
+    subplot(2,1,2)
+    plot(tf_1,xf_1(:,1),tf_2,xf_2(:,1),tf_3,xf_3(:,1),tf_4,xf_4(:,1))
+    title({' Tractor Lateral Error(LQR), $e_1$'},...
+            'interpreter','latex','fontsize',16);
+    xlabel('Time [$s$]',...
+       'interpreter','latex','fontsize',14);
+    ylabel('Position Error [$m$]',...
+       'interpreter','latex','fontsize',14);
+    legend({'$m_2$ = 36000','$m_2$ = 50000','$m_2$ = 65000','$m_2$ = 80000'},...
+       'interpreter','latex','fontsize',14,'location','bestoutside');
+
+
+    hf6=figure(6)
+    hf6.set('Name','$e_2$',...
+        'renderer','painters','position',[360 198 700 420]);
+    subplot(2,1,1)
+    plot(ta_1,xa_1(:,2),ta_2,xa_2(:,2),ta_3,xa_3(:,2),ta_4,xa_4(:,2))
+    title({'Tractor Yaw Angle Error(Adaptive), $e_2$'},...
+            'interpreter','latex','fontsize',16);
+    xlabel('Time [$s$]',...
+       'interpreter','latex','fontsize',14);
+    ylabel('Angle Error [$rad$]',...
+       'interpreter','latex','fontsize',14);
+    legend({'$m_2$ = 36000','$m_2$ = 50000','$m_2$ = 65000','$m_2$ = 80000'},...
+       'interpreter','latex','fontsize',14,'location','bestoutside');
+
+
+    subplot(2,1,2)
+    plot(tf_1,xf_1(:,2),tf_2,xf_2(:,2),tf_3,xf_3(:,2),tf_4,xf_4(:,2))
+    title({'Tractor Yaw Angle Error (LQR), $e_2$'},...
+            'interpreter','latex','fontsize',16);
+    xlabel('Time [$s$]',...
+       'interpreter','latex','fontsize',14);
+    ylabel('Angle Error [$rad$]',...
+       'interpreter','latex','fontsize',14);
+    legend({'$m_2$ = 36000','$m_2$ = 50000','$m_2$ = 65000','$m_2$ = 80000'},...
+       'interpreter','latex','fontsize',14,'location','bestoutside');
+
+
+    hf7 = figure(7)
+    hf7.set('Name','$e_3$',...
+        'renderer','painters','position',[360 198 700 420]);
+    subplot(2,1,1)
+    plot(ta_1,xa_1(:,3),ta_2,xa_2(:,3),ta_3,xa_3(:,3),ta_4,xa_4(:,3))
+    title({'Trailer Lateral Error(Adaptive), $e_3$'},...
+            'interpreter','latex','fontsize',16);
+    xlabel('Time [$s$]',...
+       'interpreter','latex','fontsize',14);
+    ylabel('Position Error [$m$]',...
+       'interpreter','latex','fontsize',14);
+    legend({'$m_2$ = 36000','$m_2$ = 50000','$m_2$ = 65000','$m_2$ = 80000'},...
+       'interpreter','latex','fontsize',14,'location','bestoutside');
+
+    subplot(2,1,2)
+    plot(tf_1,xf_1(:,3),tf_2,xf_2(:,3),tf_3,xf_3(:,3),tf_4,xf_4(:,3))
+    title({'Trailer Lateral Error (LQR), $e_3$'},...
+            'interpreter','latex','fontsize',16);
+    xlabel('Time [$s$]',...
+       'interpreter','latex','fontsize',14);
+    ylabel('Position Error [$m$]',...
+       'interpreter','latex','fontsize',14);
+    legend({'$m_2$ = 36000','$m_2$ = 50000','$m_2$ = 65000','$m_2$ = 80000'},...
+       'interpreter','latex','fontsize',14,'location','bestoutside');
+
+    hf8=figure(8)
+    hf8.set('Name','$e_4$',...
+        'renderer','painters','position',[360 198 700 420]);
+    subplot(2,1,1)
+    plot(ta_1,xa_1(:,4),ta_2,xa_2(:,4),ta_3,xa_3(:,4),ta_4,xa_4(:,4))
+    title({'Trailer Yaw Angle Error (Adaptive), $e_4$'},...
+            'interpreter','latex','fontsize',16);
+    xlabel('Time [$s$]',...
+       'interpreter','latex','fontsize',14);
+    ylabel('Angle Error [$rad$]',...
+       'interpreter','latex','fontsize',14);
+    legend({'$m_2$ = 36000','$m_2$ = 50000','$m_2$ = 65000','$m_2$ = 80000'},...
+       'interpreter','latex','fontsize',14,'location','bestoutside');
+
+    subplot(2,1,2)
+    plot(tf_1,xf_1(:,4),tf_2,xf_2(:,4),tf_3,xf_3(:,4),tf_4,xf_4(:,4))
+    title({'Trailer Yaw Angle Error (LQR), $e_4$'},...
+            'interpreter','latex','fontsize',16);
+    xlabel('Time [$s$]',...
+       'interpreter','latex','fontsize',14);
+    ylabel('Angle Error [$rad$]',...
+       'interpreter','latex','fontsize',14);
+    legend({'$m_2$ = 36000','$m_2$ = 50000','$m_2$ = 65000','$m_2$ = 80000'},...
+       'interpreter','latex','fontsize',14,'location','bestoutside');
+
+
+    hf9=figure(9)
+    hf9.set('Name','$Slip Angle$',...
+        'renderer','painters','position',[360 198 700 420]);
+    subplot(2,1,1)
+    plot(ta_1,rad2deg(xsa_1(:,1)),ta_2,rad2deg(xsa_2(:,1)),ta_3,rad2deg(xsa_3(:,1)),ta_4,rad2deg(xsa_4(:,1)))
+    title({'Tractor Slip Angle, Adaptive'},...
+            'interpreter','latex','fontsize',16);
+    xlabel('Time [$s$]',...
+       'interpreter','latex','fontsize',14);
+    ylabel('Angle Error [$deg$]',...
+       'interpreter','latex','fontsize',14);
+    legend({'$m_2$ = 36000','$m_2$ = 50000','$m_2$ = 65000','$m_2$ = 80000'},...
+       'interpreter','latex','fontsize',14,'location','bestoutside');
+
+    subplot(2,1,2)
+    plot(tf_1,rad2deg(xsf_1(:,1)),tf_2,rad2deg(xsf_2(:,1)),tf_3,rad2deg(xsf_3(:,1)),tf_4,rad2deg(xsf_4(:,1)))
+    title({'Tractor Slip Angle, LQR'},...
+            'interpreter','latex','fontsize',16);
+    xlabel('Time [$s$]',...
+       'interpreter','latex','fontsize',14);
+    ylabel('Angle Error [$deg$]',...
+       'interpreter','latex','fontsize',14);
+    legend({'$m_2$ = 36000','$m_2$ = 50000','$m_2$ = 65000','$m_2$ = 80000'},...
+       'interpreter','latex','fontsize',14,'location','bestoutside');
+\end{verbatim}
+\begin{verbatim}
+end
+\end{verbatim}
+
+
+
+\end{document}
+    

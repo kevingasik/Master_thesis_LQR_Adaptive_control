@@ -1,0 +1,71 @@
+
+% This LaTeX was auto-generated from MATLAB code.
+% To make changes, update the MATLAB code and republish this document.
+
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{color}
+
+\sloppy
+\definecolor{lightgray}{gray}{0.5}
+\setlength{\parindent}{0pt}
+
+\begin{document}
+
+    
+    
+\subsection*{Contents}
+
+\begin{itemize}
+\setlength{\itemsep}{-1ex}
+   \item Linear And Nonlinear Tractor Trailer Controller (model constants)
+\end{itemize}
+\begin{verbatim}
+function [Fn,C1,C2,C,C3,Cs1,Cq1] = model_constants(Fz1,Fz3,a1,b1)
+\end{verbatim}
+
+
+\subsection*{Linear And Nonlinear Tractor Trailer Controller (model constants)}
+
+\begin{par}
+Assigns Tractor Constants in the main script.
+\end{par} \vspace{1em}
+\begin{par}
+\textbf{Author:} Kevin Gasik
+\end{par} \vspace{1em}
+\begin{par}
+\textbf{Date:}   3/04/2019
+\end{par} \vspace{1em}
+\begin{par}
+\textbf{See Also:}
+\end{par} \vspace{1em}
+\begin{par}
+*
+\end{par} \vspace{1em}
+\begin{par}
+\textbf{Code Repository:} Visit for source files
+\end{par} \vspace{1em}
+\begin{par}
+\textbf{Detailed Description:} This function takes four inputs to calculate the models coefficient of coerning stiffnesses
+\end{par} \vspace{1em}
+\begin{par}
+\textbf{Copyright (C) 2019 Kevin Gasik} This file is not to be used or distributed by anyone without explicit consent from the author.This file serves as an example of how to approach and simulate these problems and should not be used to implement any controllers on any vehicle. By using the program shown below you agree that if anyone is harmed Kevin Gasik and California Polytechnic University is not liable.
+\end{par} \vspace{1em}
+\begin{verbatim}
+%%Define Model Constants
+Fn = 5.73; %normalized cornerning stifness
+C1 = Fz1*Fn; % cornering stiffness on the front wheel of truck
+C2 = Fz1*Fn; % cornering stiffness on the rear wheel of truck
+C = C1 + C2; % simplication for cornering stiffness
+C3 = Fz3*Fn; % Cornering stiffness on rear wheel of trailer
+Cs1 = a1*C1 - b1*C2;
+Cq1 = sqrt(a1^2*C1 +b1^2*C2);
+\end{verbatim}
+\begin{verbatim}
+end
+\end{verbatim}
+
+
+
+\end{document}
+    

@@ -1,0 +1,80 @@
+
+% This LaTeX was auto-generated from MATLAB code.
+% To make changes, update the MATLAB code and republish this document.
+
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{color}
+
+\sloppy
+\definecolor{lightgray}{gray}{0.5}
+\setlength{\parindent}{0pt}
+
+\begin{document}
+
+    
+    
+\subsection*{Contents}
+
+\begin{itemize}
+\setlength{\itemsep}{-1ex}
+   \item Linear And Nonlinear Tractor Trailer Controller (Tractor Constants)
+   \item Define  truck constants
+\end{itemize}
+\begin{verbatim}
+function [g,m1,a1,l1,b1,h1,k1,I1,Fz1,Fz2] = truck_constants(g,m1)
+\end{verbatim}
+
+
+\subsection*{Linear And Nonlinear Tractor Trailer Controller (Tractor Constants)}
+
+\begin{par}
+Assigns Tractor Constants in the main script.
+\end{par} \vspace{1em}
+\begin{par}
+\textbf{Author:} Kevin Gasik
+\end{par} \vspace{1em}
+\begin{par}
+\textbf{Date:}   3/04/2019
+\end{par} \vspace{1em}
+\begin{par}
+\textbf{See Also:}
+\end{par} \vspace{1em}
+\begin{par}
+*
+\end{par} \vspace{1em}
+\begin{par}
+\textbf{Code Repository:} Visit for source files
+\end{par} \vspace{1em}
+\begin{par}
+\textbf{Detailed Description:} This function takes two inputs g-gravity and m1-mass of the tractor to then assign the rest of the trailer constants and output them to the main script.
+\end{par} \vspace{1em}
+\begin{par}
+\textbf{Copyright (C) 2019 Kevin Gasik} This file is not to be used or distributed by anyone without explicit consent from the author.This file serves as an example of how to approach and simulate these problems and should not be used to implement any controllers on any vehicle. By using the program shown below you agree that if anyone is harmed Kevin Gasik and California Polytechnic University is not liable.
+\end{par} \vspace{1em}
+\begin{verbatim}
+g = g; % gravity (m/s^2)
+\end{verbatim}
+
+
+\subsection*{Define  truck constants}
+
+\begin{verbatim}
+m1 = 7449; % truck mass (kg)
+a1 = 1.10; % distance from front tire of truck to center of mass (m)
+l1 = 3.6; % distance from front tire to back tire of truck (m)
+b1 = l1 - a1;
+h1 = l1 - b1;
+k1 = 1.89;%radius of gyration for truck (m)
+I1 = m1*k1^2; % moment of inertia for truck
+Fz1 = 50620; %front axle load (N)
+Fz2 = 22455; %rear axle load (N)
+\end{verbatim}
+\begin{verbatim}
+end
+\end{verbatim}
+
+
+
+\end{document}
+    
